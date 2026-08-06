@@ -1,4 +1,4 @@
--- =====================================================================
+        -- =====================================================================
 -- Valorant Match-Tracking Database
 -- Data Query Language (DQL) File - SELECT statements
 -- Author: Jacob (In charge of DQL files) / Team Top Fraggers
@@ -7,53 +7,45 @@
 -- Total queries: 15
 -- Queries with JOINs: 14
 -- Queries with Aggregate Functions: 6
+-- Queries using VIEWs: 6
 -- =====================================================================
 
 
 -- ---------------------------------------------------------------------
 -- Use Case: (Player) View their full match history, sorted by most recent.
 -- Shows every match a specific player has taken part in, most recent first.
--- Uses JOIN.
+-- Uses JOIN + VIEW
 -- ---------------------------------------------------------------------
 SELECT
-    p.PlayerName,
-    m.MatchID,
-    m.MatchDate,
-    g.GamemodeName,
-    mp2.MapName,
-    mp.TeamSide,
-    m.WinningTeam
-FROM MatchPlayer mp
-JOIN Player p        ON mp.PlayerID = p.PlayerID
-JOIN Match m          ON mp.MatchID = m.MatchID
-JOIN Gamemode g        ON m.GamemodeID = g.GamemodeID
-JOIN Map mp2            ON m.MapID = mp2.MapID
-WHERE p.PlayerName = 'ExamplePlayer'
-ORDER BY m.MatchDate DESC;
+    PlayerName,
+    MatchID,
+    MatchDate,
+    GamemodeName,
+    MapName,
+    TeamSide,
+    WinningTeam
+FROM vw_PlayerMatchHistory
+WHERE PlayerName = 'ExamplePlayer'
+ORDER BY MatchDate DESC;
 
 
 -- ---------------------------------------------------------------------
 -- Use Case: (Player) View detailed stats (K/D/A, Score) for a specific
 -- past match.
--- Pulls the full stat line for one player in one specific match.
--- Uses JOIN.
+-- Uses JOIN + VIEW
 -- ---------------------------------------------------------------------
 SELECT
-    p.PlayerName,
-    m.MatchID,
-    m.MatchDate,
-    a.AgentName,
-    ms.Kills,
-    ms.Deaths,
-    ms.Assists,
-    ms.Score
-FROM MatchStats ms
-JOIN MatchPlayer mp ON ms.MatchPlayerID = mp.MatchPlayerID
-JOIN Player p       ON mp.PlayerID = p.PlayerID
-JOIN Agent a        ON mp.AgentID = a.AgentID
-JOIN Match m        ON mp.MatchID = m.MatchID
-WHERE p.PlayerName = 'ExamplePlayer'
-  AND m.MatchID = 1;
+    PlayerName,
+    MatchID,
+    MatchDate,
+    AgentName,
+    Kills,
+    Deaths,
+    Assists,
+    Score
+FROM vw_MatchScore
+WHERE PlayerName = 'ExamplePlayer'
+  AND MatchID = 1;
 
 
 -- ---------------------------------------------------------------------
@@ -71,7 +63,7 @@ SELECT
 FROM PlayerAbilityLoadout pal
 JOIN MatchPlayer mp ON pal.MatchPlayerID = mp.MatchPlayerID
 JOIN Player p       ON mp.PlayerID = p.PlayerID
-JOIN Ability ab      ON pal.AbilityID = ab.AbilityID
+JOIN Ability ab     ON pal.AbilityID = ab.AbilityID
 LEFT JOIN Weapon w  ON pal.WeaponID = w.WeaponID
 WHERE mp.MatchPlayerID = 1;
 
@@ -114,48 +106,38 @@ LIMIT 10;
 -- Use Case: (System) Log each participating player's per-match
 -- performance stats and final rank.
 -- Full box score for every player in a given match, including their rank.
--- Uses JOIN.
+-- Uses JOIN + VIEW
 -- ---------------------------------------------------------------------
 SELECT
-    m.MatchID,
-    p.PlayerName,
-    a.AgentName,
-    mp.TeamSide,
-    r.RankName,
-    ms.Kills,
-    ms.Deaths,
-    ms.Assists,
-    ms.Score
-FROM MatchPlayer mp
-JOIN Match m   ON mp.MatchID = m.MatchID
-JOIN Player p  ON mp.PlayerID = p.PlayerID
-JOIN Agent a   ON mp.AgentID = a.AgentID
-JOIN Rank r    ON p.RankID = r.RankID
-JOIN MatchStats ms ON ms.MatchPlayerID = mp.MatchPlayerID
-WHERE m.MatchID = 1
-ORDER BY ms.Score DESC;
+    MatchID,
+    PlayerName,
+    AgentName,
+    TeamSide,
+    RankName,
+    Kills,
+    Deaths,
+    Assists,
+    Score
+FROM vw_MatchScore
+WHERE MatchID = 1
+ORDER BY Score DESC;
 
 
 -- ---------------------------------------------------------------------
 -- Use Case: (Player) Compare their average stats (Kills/Deaths/Assists/
 -- Score) across matches on a specific map.
--- Uses JOIN + AGGREGATE (AVG).
+-- Uses JOIN + AGGREGATE (AVG) + VIEW
 -- ---------------------------------------------------------------------
 SELECT
-    p.PlayerName,
-    map.MapName,
-    AVG(ms.Kills)   AS AvgKills,
-    AVG(ms.Deaths)  AS AvgDeaths,
-    AVG(ms.Assists) AS AvgAssists,
-    AVG(ms.Score)   AS AvgScore
-FROM MatchStats ms
-JOIN MatchPlayer mp ON ms.MatchPlayerID = mp.MatchPlayerID
-JOIN Player p       ON mp.PlayerID = p.PlayerID
-JOIN Match m        ON mp.MatchID = m.MatchID
-JOIN Map map        ON m.MapID = map.MapID
-WHERE p.PlayerName = 'ExamplePlayer'
-  AND map.MapName = 'Ascent'
-GROUP BY p.PlayerName, map.MapName;
+    PlayerName,
+    MapName,
+    AvgKills,
+    AvgDeaths,
+    AvgAssists,
+    AvgScore
+FROM vw_PlayerAvgStatsByMap
+WHERE PlayerName = 'ExamplePlayer'
+  AND MapName = 'Ascent';
 
 
 -- ---------------------------------------------------------------------
@@ -248,29 +230,25 @@ ORDER BY ro.RoleName, a.AgentName;
 -- ---------------------------------------------------------------------
 -- Use Case: (Admin) Identify the most popular agents server-wide,
 -- to help balance future game updates.
--- Uses JOIN + AGGREGATE (COUNT).
+-- Uses JOIN + AGGREGATE (COUNT) + VIEW.
 -- ---------------------------------------------------------------------
 SELECT
-    a.AgentName,
-    COUNT(mp.MatchPlayerID) AS TimesPicked
-FROM Agent a
-LEFT JOIN MatchPlayer mp ON a.AgentID = mp.AgentID
-GROUP BY a.AgentName
+    AgentName,
+    TimesPicked
+FROM vw_AgentUsage
 ORDER BY TimesPicked DESC;
 
 
 -- ---------------------------------------------------------------------
 -- Use Case: (Admin) Identify the most-used weapons across all matches
 -- to inform balance patches.
--- Uses JOIN + AGGREGATE (COUNT).
+-- Uses JOIN + AGGREGATE (COUNT) + VIEW.
 -- ---------------------------------------------------------------------
 SELECT
-    w.WeaponName,
-    w.WeaponType,
-    COUNT(mp.MatchPlayerID) AS TimesUsed
-FROM Weapon w
-LEFT JOIN MatchPlayer mp ON w.WeaponID = mp.WeaponID
-GROUP BY w.WeaponName, w.WeaponType
+    WeaponName,
+    WeaponType,
+    TimesUsed
+FROM vw_WeaponUsage
 ORDER BY TimesUsed DESC;
 
 
