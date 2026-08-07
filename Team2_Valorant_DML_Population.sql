@@ -1,3 +1,5 @@
+-- Author: Saint
+
 PRAGMA foreign_keys = ON;
 BEGIN IMMEDIATE;
 
@@ -84,7 +86,7 @@ FROM (
     SELECT 'Tray', 'Asia Pacific', 'Diamond' UNION ALL
     SELECT 'predator', 'Latin America', 'Ascendant' UNION ALL
     SELECT 'Bnetplayer', 'Japan', 'Silver' UNION ALL
-    SELECT 'heyyitskiwi', 'Oceania', 'Immortal' UNION ALL
+    SELECT 'heyyitskiwi', 'Oceania', 'Immortal'
 ) seed
 JOIN Region reg ON reg.RegionName = seed.RegionName
 JOIN Rank r ON r.RankName = seed.RankName

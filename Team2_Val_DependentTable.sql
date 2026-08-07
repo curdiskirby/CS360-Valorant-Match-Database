@@ -1,3 +1,5 @@
+-- Author: Aidan
+
 -- Player Table
 -- Stores information about each Valorant player.
 -- Each player belongs to one Region and one Rank.

@@ -1,3 +1,5 @@
+-- Author: Curtis
+
 -- INDEXES
 
 -- Player lookups by name and joins to Region/Rank
@@ -10,8 +12,7 @@ CREATE INDEX IF NOT EXISTS idx_Match_MatchDate ON Match(MatchDate);
 CREATE INDEX IF NOT EXISTS idx_Match_GamemodeID ON Match(GamemodeID);
 CREATE INDEX IF NOT EXISTS idx_Match_MapID ON Match(MapID);
 
--- MatchPlayer: UNIQUE (MatchID, PlayerID) already indexes by MatchID first,
--- add indexes for queries that filter/join by PlayerID or AgentID directly
+-- MatchPlayer: for queries that filter/join by PlayerID or AgentID directly
 CREATE INDEX IF NOT EXISTS idx_MatchPlayer_PlayerID ON MatchPlayer(PlayerID);
 CREATE INDEX IF NOT EXISTS idx_MatchPlayer_AgentID ON MatchPlayer(AgentID);
 CREATE INDEX IF NOT EXISTS idx_MatchPlayer_WeaponID ON MatchPlayer(WeaponID);
@@ -22,14 +23,13 @@ CREATE INDEX IF NOT EXISTS idx_Agent_RoleID ON Agent(RoleID);
 -- Weapon: queries that group by type / filter by type
 CREATE INDEX IF NOT EXISTS idx_Weapon_WeaponType ON Weapon(WeaponType);
 
--- PlayerAbilityLoadout: UNIQUE (MatchPlayerID, AbilityID) covers MatchPlayerID as leading column,
--- add index if you query by AbilityID alone
+-- PlayerAbilityLoadout: for querying by AbilityID alone
 CREATE INDEX IF NOT EXISTS idx_PAL_AbilityID ON PlayerAbilityLoadout(AbilityID);
 
--- MatchStats: UNIQUE(MatchPlayerID) exists; if you frequently sort by Score for top lists consider:
+-- MatchStats: for sorting by Score
 CREATE INDEX IF NOT EXISTS idx_MatchStats_Score ON MatchStats(Score);
 
--- VIEWS (convenience for frequent multi-join queries)
+-- VIEWS
 
 -- Player match history view
 CREATE VIEW IF NOT EXISTS vw_PlayerMatchHistory AS

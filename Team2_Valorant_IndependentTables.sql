@@ -1,3 +1,5 @@
+-- Author: Curtis
+
 DROP TABLE IF EXISTS Region;
 DROP TABLE IF EXISTS Rank;
 DROP TABLE IF EXISTS Role;
